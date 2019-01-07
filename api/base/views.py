@@ -6,11 +6,16 @@ from django.views.decorators.http import require_POST
 
 import django.contrib.auth as django_auth
 
-def create_json_response(success=True, message="", status=200):
+
+def create_json_response(success=True, message="", status=200, data=None,
+                         empty_data=False):
     payload = {
         "message": message,
         "success": success,
     }
+
+    if data is not None or empty_data:
+        payload["data"] = data
 
     return http.JsonResponse(payload, status=status)
 
