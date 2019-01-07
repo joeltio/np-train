@@ -9,9 +9,12 @@ class Order(models.Model):
     # SmallIntegerField accepts [-32768, 32767]
     status = models.SmallIntegerField()
 
+    # The status values should be the same order as the flow and starting
+    # from 0
     STATUS_NOT_ACTIVE = 0
     STATUS_ACTIVE = 1
     STATUS_COMPLETED = 2
+    STATUS_FLOW = [STATUS_NOT_ACTIVE, STATUS_ACTIVE, STATUS_COMPLETED]
 
     def as_json(self):
         return {
