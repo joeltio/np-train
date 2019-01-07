@@ -6,4 +6,8 @@ COPY requirements.txt /api/
 RUN pip install -r requirements.txt
 COPY . /api/
 
+RUN useradd -ms /bin/bash uwsgi
+USER uwsgi
+WORKDIR /api
+
 CMD ["sh", "entrypoint.sh"]

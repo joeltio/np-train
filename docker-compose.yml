@@ -5,7 +5,16 @@ services:
         image: postgres
     api:
         build: ./api
-        ports:
-            - "8000:8000"
+        volumes:
+            - ./socket:/socket
         depends_on:
             - db
+    nginx:
+        build: ./nginx
+        volumes:
+            - ./socket:/socket
+            - ./api:/api
+        depends_on:
+            - api
+        ports:
+            - "8000:80"
