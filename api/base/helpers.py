@@ -2,6 +2,11 @@ import django.http as http
 
 
 def validate_positive_int(data, include_zero=False):
+    if isinstance(data, int):
+        return True
+    elif not isinstance(data, str):
+        return False
+
     if include_zero:
         return data.isdigit()
 
