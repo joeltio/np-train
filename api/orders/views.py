@@ -1,3 +1,5 @@
+import json
+
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET
 
@@ -25,21 +27,30 @@ def uncompleted_order(request):
 @csrf_exempt
 @require_POST
 def new_order(request):
+    json_data = json.loads(request.body)
+
     # Check if there is a destination and color
-    if not base_helpers.has_keys({"destination", "color"}, request.POST):
+    if not base_helpers.has_keys({"destination", "color"}, json_data):
         return base_helpers.create_json_response(
             success=False,
             message="Missing destination or color",
             status=400,
         )
 
-    destination = request.POST["destination"]
-    color = request.POST["color"]
+    destination = json_data["destination"]
+    color = json_data["color"]
 
     if not base_helpers.validate_positive_int(color, include_zero=True):
         return base_helpers.create_json_response(
             success=False,
             message="The color is not a non-negative integer",
+            status=400,
+        )
+
+    if not isinstance(destination, str):
+        return base_helpers.create_json_response(
+            success=False,
+            message="The destination must be a string",
             status=400,
         )
 
