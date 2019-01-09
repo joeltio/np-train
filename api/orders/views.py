@@ -11,7 +11,7 @@ import base.helpers as base_helpers
 def uncompleted_order(request):
     # Get the latest uncompleted order
     order = Order.objects.filter(
-        status=Order.STATUS_NOT_COMPLETED).order_by("-id").first()
+        status=Order.STATUS_NOT_ACTIVE).order_by("id").first()
 
     if order is not None:
         return base_helpers.create_json_response(
