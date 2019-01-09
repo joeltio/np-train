@@ -7,6 +7,7 @@ RUN pip install -r requirements.txt
 COPY . /api/
 
 RUN useradd -ms /bin/bash uwsgi
+RUN chown -R uwsgi:uwsgi /api
 USER uwsgi
 WORKDIR /api
 
