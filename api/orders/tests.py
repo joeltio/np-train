@@ -14,7 +14,8 @@ class OrderViewTestCase(TransactionTestCase):
         self.view = view
 
     def send_request(self, data):
-        request = self.factory.post(self.order_url, data=data)
+        request = self.factory.post(self.order_url, data=data,
+                                    content_type="application/json")
         return self.view(request)
 
     def get_request(self):
