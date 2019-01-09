@@ -7,35 +7,41 @@ from orders import views
 from orders import models
 
 
-class NewOrderViewTestCase(TransactionTestCase):
-    def setUp(self):
+class OrderViewTestCase(TransactionTestCase):
+    def setUp(self, url, view):
         self.factory = RequestFactory()
-        self.new_orders_url = "/orders/new"
+        self.order_url = url
+        self.view = view
 
     def send_request(self, data):
-        request = self.factory.post(self.new_orders_url, data=data)
-        response = views.new_order(request)
+        request = self.factory.post(self.order_url, data=data)
+        response = self.view(request)
 
         return response
 
-    def assertBadRequest(self, data):
+    def assertRequestStatusCode(self, data, status_code):
         response = self.send_request(data)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, status_code)
+
+        return response
+
+
+class NewOrderViewTestCase(OrderViewTestCase):
+    def setUp(self):
+        super().setUp("/orders/new", views.new_order)
 
     def test_create_with_missing_data(self):
         # Only destination
         payload = {
             "destination": "Bishan"
         }
-
-        self.assertBadRequest(payload)
+        self.assertRequestStatusCode(payload, 400)
 
         # Only color
         payload = {
             "color": 5
         }
-
-        self.assertBadRequest(payload)
+        self.assertRequestStatusCode(payload, 400)
 
     def test_invalid_data(self):
         # Invalid destination
@@ -43,16 +49,14 @@ class NewOrderViewTestCase(TransactionTestCase):
             "destination": 5,
             "color": 5,
         }
-
-        self.assertBadRequest(payload)
+        self.assertRequestStatusCode(payload, 400)
 
         # Invalid color
         payload = {
             "destination": "Bishan",
             "color": "asdf",
         }
-
-        self.assertBadRequest(payload)
+        self.assertRequestStatusCode(payload, 400)
 
     def test_create(self):
         payload = {
@@ -60,8 +64,7 @@ class NewOrderViewTestCase(TransactionTestCase):
             "color": 5,
         }
 
-        response = self.send_request(payload)
-        self.assertEqual(response.status_code, 200)
+        response = self.assertRequestStatusCode(payload, 200)
 
         # Check if there is a new record in the DB
         json_response = json.loads(response.content)
@@ -76,10 +79,9 @@ class NewOrderViewTestCase(TransactionTestCase):
         self.assertEqual(db_order.color, 5)
 
 
-class UpdateOrderViewTestCase(TransactionTestCase):
+class UpdateOrderViewTestCase(OrderViewTestCase):
     def setUp(self):
-        self.factory = RequestFactory()
-        self.update_orders_url = "/orders/update"
+        super().setUp("/orders/update", views.update_order)
 
         # Create some orders
         self.not_active = models.Order.objects.create(
@@ -102,16 +104,6 @@ class UpdateOrderViewTestCase(TransactionTestCase):
 
         self.orders = [self.not_active, self.active, self.completed]
 
-    def send_request(self, data):
-        request = self.factory.post(self.update_orders_url, data=data)
-        response = views.update_order(request)
-
-        return response
-
-    def assertBadRequest(self, data):
-        response = self.send_request(data)
-        self.assertEqual(response.status_code, 400)
-
     def test_reject_invalid_update_status(self):
         def test_disallow(from_status, to_status):
             order = self.orders[from_status]
@@ -120,8 +112,7 @@ class UpdateOrderViewTestCase(TransactionTestCase):
                 "id": order.pk,
                 "new_status": to_status
             }
-
-            self.assertBadRequest(data=payload)
+            self.assertRequestStatusCode(payload, 400)
 
         # Disallow NOT_ACTIVE -> COMPLETED
         test_disallow(from_status=models.Order.STATUS_NOT_ACTIVE,
@@ -145,16 +136,14 @@ class UpdateOrderViewTestCase(TransactionTestCase):
             "id": self.not_active.pk,
             "new_status": models.Order.STATUS_ACTIVE
         }
-        response = self.send_request(payload)
-        self.assertEqual(response.status_code, 200)
+        self.assertRequestStatusCode(payload, 200)
 
         # Check that the order has been updated
         self.assertEqual(self.not_active.status, models.Order.STATUS_ACTIVE)
 
         # ACTIVE -> COMPLETED
         payload["new_status"] = models.Order.STATUS_COMPLETED
-        response = self.send_request(payload)
-        self.assertEqual(response.status_code, 200)
+        self.assertRequestStatusCode(payload, 200)
 
         # Check that the order has been updated
         self.assertEqual(self.not_active.status, models.Order.COMPLETED)
