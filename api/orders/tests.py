@@ -12,10 +12,14 @@ class NewOrderViewTestCase(TransactionTestCase):
         self.factory = RequestFactory()
         self.new_orders_url = "/orders/new"
 
-    def assertBadRequest(self, data):
+    def send_request(self, data):
         request = self.factory.post(self.new_orders_url, data=data)
         response = views.new_order(request)
 
+        return response
+
+    def assertBadRequest(self, data):
+        response = self.send_request(data)
         self.assertEqual(response.status_code, 400)
 
     def test_create_with_missing_data(self):
@@ -56,9 +60,7 @@ class NewOrderViewTestCase(TransactionTestCase):
             "color": 5,
         }
 
-        request = self.factory.post(self.new_orders_url, data=payload)
-        response = views.new_order(request)
-
+        response = self.send_request(payload)
         self.assertEqual(response.status_code, 200)
 
         # Check if there is a new record in the DB
