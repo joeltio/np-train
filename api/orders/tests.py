@@ -142,14 +142,16 @@ class UpdateOrderViewTestCase(OrderViewTestCase):
         self.assertRequestStatusCode(payload, 200)
 
         # Check that the order has been updated
-        self.assertEqual(self.not_active.status, models.Order.STATUS_ACTIVE)
+        updated_order = models.Order.objects.get(pk=self.not_active.pk)
+        self.assertEqual(updated_order.status, models.Order.STATUS_ACTIVE)
 
         # ACTIVE -> COMPLETED
         payload["new_status"] = models.Order.STATUS_COMPLETED
         self.assertRequestStatusCode(payload, 200)
 
         # Check that the order has been updated
-        self.assertEqual(self.not_active.status, models.Order.COMPLETED)
+        updated_order = models.Order.objects.get(pk=self.not_active.pk)
+        self.assertEqual(updated_order.status, models.Order.STATUS_COMPLETED)
 
     def test_update_with_missing_data(self):
         # Only id

@@ -27,7 +27,15 @@ def uncompleted_order(request):
 @csrf_exempt
 @require_POST
 def new_order(request):
-    json_data = json.loads(request.body)
+    # Read json
+    try:
+        json_data = json.loads(request.body)
+    except json.decoder.JSONDecoderError:
+        return base_helpers.create_json_response(
+            success=False,
+            message="Bad JSON",
+            status=400
+        )
 
     # Check if there is a destination and color
     if not base_helpers.has_keys({"destination", "color"}, json_data):
@@ -66,7 +74,17 @@ def new_order(request):
 @csrf_exempt
 @require_POST
 def update_order(request):
-    if not base_helpers.has_keys({"id", "new_status"}):
+    # Read json
+    try:
+        json_data = json.loads(request.body)
+    except json.decoder.JSONDecoderError:
+        return base_helpers.create_json_response(
+            success=False,
+            message="Bad JSON",
+            status=400
+        )
+
+    if not base_helpers.has_keys({"id", "new_status"}, json_data):
         return base_helpers.create_json_response(
             success=False,
             message="Missing id or new_status",
@@ -74,25 +92,25 @@ def update_order(request):
         )
 
     if not base_helpers.validate_positive_int(
-            request.POST["id"], include_zero=True):
+            json_data["id"], include_zero=True):
         return base_helpers.create_json_response(
             success=False,
             message="Bad id",
             status=400,
         )
-    elif not request.POST["new_status"] in Order.STATUS_FLOW:
+    elif not json_data["new_status"] in Order.STATUS_FLOW:
         return base_helpers.create_json_response(
             success=False,
             message="Bad new_status",
             status=400,
         )
 
-    new_status = request.POST["new_status"]
+    new_status = json_data["new_status"]
 
     # Find the order
-    order = Order.objects.filter(pk=int(request.POST["id"]))
-
-    if not order.exists():
+    try:
+        order = Order.objects.get(pk=int(json_data["id"]))
+    except Order.DoesNotExist:
         return base_helpers.create_json_response(
             success=False,
             message="There is no order with that id",
@@ -116,3 +134,5 @@ def update_order(request):
 
     order.status = new_status
     order.save()
+
+    return base_helpers.create_json_response()
