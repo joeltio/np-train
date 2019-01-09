@@ -15,9 +15,11 @@ class OrderViewTestCase(TransactionTestCase):
 
     def send_request(self, data):
         request = self.factory.post(self.order_url, data=data)
-        response = self.view(request)
+        return self.view(request)
 
-        return response
+    def get_request(self):
+        request = self.factory.get(self.order_url)
+        return self.view(request)
 
     def assertRequestStatusCode(self, data, status_code):
         response = self.send_request(data)
@@ -67,8 +69,8 @@ class NewOrderViewTestCase(OrderViewTestCase):
         response = self.assertRequestStatusCode(payload, 200)
 
         # Check if there is a new record in the DB
-        json_response = json.loads(response.content)
-        order_id = json_response["data"]["id"]
+        response_json = json.loads(response.content)
+        order_id = response_json["data"]["id"]
 
         query = models.Order.objects.filter(id=order_id)
         self.assertTrue(query.exists())
@@ -182,3 +184,67 @@ class UpdateOrderViewTestCase(OrderViewTestCase):
             "new_status": "asdf",
         }
         self.assertRequestStatusCode(payload, 400)
+
+
+class UncompletedOrderViewTestCase(OrderViewTestCase):
+    def setUp(self):
+        super().setUp("orders/uncompleted", views.uncompleted_order)
+
+    def test_no_uncompleted_orders(self):
+        # Create some completed and active orders
+        models.Order.objects.create(
+            destination="Bishan",
+            color=5,
+            status=models.Order.STATUS_ACTIVE
+        )
+
+        models.Order.objects.create(
+            destination="Bishan",
+            color=5,
+            status=models.Order.STATUS_COMPLETED
+        )
+
+        # Request for the uncompleted order
+        response = self.get_request()
+        response_json = json.loads(response.content)
+
+        # Check that it returns empty data
+        self.assertIsNone(response_json["data"])
+
+    def test_get_uncompleted_orders(self):
+        # Create an uncompleted order
+        order = models.Order.objects.create(
+            destination="Bishan",
+            color=5,
+            status=models.Order.STATUS_NOT_ACTIVE
+        )
+
+        response = self.get_request()
+        response_json = json.loads(response.content)
+
+        # Check that it returns the correct order
+        self.assertEqual(response_json["data"]["id"], order.pk)
+
+    def test_returns_oldest_uncompleted_order(self):
+        oldest_order = models.Order.objects.create(
+            destination="Bishan",
+            color=5,
+            status=models.Order.STATUS_NOT_ACTIVE
+        )
+
+        models.Order.objects.create(
+            destination="Bishan",
+            color=5,
+            status=models.Order.STATUS_NOT_ACTIVE
+        )
+        models.Order.objects.create(
+            destination="Bishan",
+            color=5,
+            status=models.Order.STATUS_NOT_ACTIVE
+        )
+
+        response = self.get_request()
+        response_json = json.loads(response.content)
+
+        # Check that it returns the correct order
+        self.assertEqual(response_json["data"]["id"], oldest_order.pk)
