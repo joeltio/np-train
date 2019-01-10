@@ -294,7 +294,8 @@ class OrderStatusViewTestCase(OrderViewTestCase):
         response = self.assertRequestStatusCode(payload, 200)
         response_json = json.loads(response.content)
 
-        self.assertEqual(response_json["data"], models.Order.STATUS_NOT_ACTIVE)
+        order_status = response_json["data"]["status"]
+        self.assertEqual(order_status, models.Order.STATUS_NOT_ACTIVE)
 
         # Check active orders
         payload = {
@@ -304,14 +305,16 @@ class OrderStatusViewTestCase(OrderViewTestCase):
         response = self.assertRequestStatusCode(payload, 200)
         response_json = json.loads(response.content)
 
-        self.assertEqual(response_json["data"], models.Order.STATUS_ACTIVE)
+        order_status = response_json["data"]["status"]
+        self.assertEqual(order_status, models.Order.STATUS_ACTIVE)
 
         # Check completed orders
         payload = {
-            "id": self.not_active.pk,
+            "id": self.completed.pk,
         }
 
         response = self.assertRequestStatusCode(payload, 200)
         response_json = json.loads(response.content)
 
-        self.assertEqual(response_json["data"], models.Order.STATUS_COMPLETED)
+        order_status = response_json["data"]["status"]
+        self.assertEqual(order_status, models.Order.STATUS_COMPLETED)

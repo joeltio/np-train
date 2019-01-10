@@ -31,7 +31,7 @@ def new_order(request):
     # Read json
     try:
         json_data = json.loads(request.body)
-    except json.decoder.JSONDecoderError:
+    except json.decoder.JSONDecodeError:
         return base_helpers.create_json_response(
             success=False,
             message="Bad JSON",
@@ -78,7 +78,7 @@ def update_order(request):
     # Read json
     try:
         json_data = json.loads(request.body)
-    except json.decoder.JSONDecoderError:
+    except json.decoder.JSONDecodeError:
         return base_helpers.create_json_response(
             success=False,
             message="Bad JSON",
@@ -137,3 +137,46 @@ def update_order(request):
     order.save()
 
     return base_helpers.create_json_response()
+
+
+@csrf_exempt
+@require_POST
+def order_status(request):
+    # Read json
+    try:
+        json_data = json.loads(request.body)
+    except json.decoder.JSONDecodeError:
+        return base_helpers.create_json_response(
+            success=False,
+            message="Bad JSON",
+            status=400
+        )
+
+    if "id" not in json_data:
+        return base_helpers.create_json_response(
+            success=False,
+            message="Missing id",
+            status=400,
+        )
+
+    if not base_helpers.validate_positive_int(
+            json_data["id"], include_zero=True):
+        return base_helpers.create_json_response(
+            success=False,
+            message="Bad id",
+            status=400,
+        )
+
+    # Get the order
+    try:
+        order = Order.objects.get(pk=json_data["id"])
+    except Order.DoesNotExist:
+        return base_helpers.create_json_response(
+            success=False,
+            message="There is no order with that id",
+            status=400,
+        )
+
+    return base_helpers.create_json_response(
+        data={"status": order.status}
+    )
