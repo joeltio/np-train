@@ -7,6 +7,7 @@ from orders.models import Order
 import base.helpers as base_helpers
 
 
+@csrf_exempt
 @require_POST
 def uncompleted_order(request):
     # Get the latest uncompleted order
