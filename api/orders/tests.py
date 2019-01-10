@@ -251,3 +251,70 @@ class UncompletedOrderViewTestCase(OrderViewTestCase):
 
         # Check that it returns the correct order
         self.assertEqual(response_json["data"]["id"], oldest_order.pk)
+
+
+class OrderStatusViewTestCase(OrderViewTestCase):
+    def setUp(self):
+        super().setUp("orders/status", views.order_status)
+
+        # Create some orders
+        self.not_active = models.Order.objects.create(
+            destination="Bishan",
+            color=5,
+            status=models.Order.STATUS_NOT_ACTIVE,
+        )
+
+        self.active = models.Order.objects.create(
+            destination="Bishan",
+            color=5,
+            status=models.Order.STATUS_ACTIVE,
+        )
+
+        self.completed = models.Order.objects.create(
+            destination="Bishan",
+            color=5,
+            status=models.Order.STATUS_COMPLETED,
+        )
+
+    def test_get_status_missing_data(self):
+        self.assertRequestStatusCode(None, 400)
+
+    def test_get_nonexistent_status(self):
+        payload = {
+            "id": 500,  # probably does not exist
+        }
+        self.assertRequestStatusCode(payload, 400)
+
+    def test_get_status(self):
+        # Check not active orders
+        payload = {
+            "id": self.not_active.pk,
+        }
+
+        response = self.assertRequestStatusCode(payload, 200)
+        response_json = json.loads(response.content)
+
+        order_status = response_json["data"]["status"]
+        self.assertEqual(order_status, models.Order.STATUS_NOT_ACTIVE)
+
+        # Check active orders
+        payload = {
+            "id": self.active.pk,
+        }
+
+        response = self.assertRequestStatusCode(payload, 200)
+        response_json = json.loads(response.content)
+
+        order_status = response_json["data"]["status"]
+        self.assertEqual(order_status, models.Order.STATUS_ACTIVE)
+
+        # Check completed orders
+        payload = {
+            "id": self.completed.pk,
+        }
+
+        response = self.assertRequestStatusCode(payload, 200)
+        response_json = json.loads(response.content)
+
+        order_status = response_json["data"]["status"]
+        self.assertEqual(order_status, models.Order.STATUS_COMPLETED)
