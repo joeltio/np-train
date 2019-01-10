@@ -279,6 +279,12 @@ class OrderStatusViewTestCase(OrderViewTestCase):
     def test_get_status_missing_data(self):
         self.assertRequestStatusCode(None, 400)
 
+    def test_get_nonexistent_status(self):
+        payload = {
+            "id": 500,  # probably does not exist
+        }
+        self.assertRequestStatusCode(payload, 400)
+
     def test_get_status(self):
         # Check not active orders
         payload = {
