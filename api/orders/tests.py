@@ -13,13 +13,13 @@ class OrderViewTestCase(TransactionTestCase):
         self.order_url = url
         self.view = view
 
-    def send_request(self, data):
-        request = self.factory.post(self.order_url, data=data,
-                                    content_type="application/json")
-        return self.view(request)
+    def send_request(self, data=None):
+        if data is not None:
+            request = self.factory.post(self.order_url, data=data,
+                                        content_type="application/json")
+        else:
+            request = self.factory.post(self.order_url)
 
-    def get_request(self):
-        request = self.factory.get(self.order_url)
         return self.view(request)
 
     def assertRequestStatusCode(self, data, status_code):
@@ -208,7 +208,7 @@ class UncompletedOrderViewTestCase(OrderViewTestCase):
         )
 
         # Request for the uncompleted order
-        response = self.get_request()
+        response = self.send_request()
         response_json = json.loads(response.content)
 
         # Check that it returns empty data
@@ -222,7 +222,7 @@ class UncompletedOrderViewTestCase(OrderViewTestCase):
             status=models.Order.STATUS_NOT_ACTIVE
         )
 
-        response = self.get_request()
+        response = self.send_request()
         response_json = json.loads(response.content)
 
         # Check that it returns the correct order
@@ -246,7 +246,7 @@ class UncompletedOrderViewTestCase(OrderViewTestCase):
             status=models.Order.STATUS_NOT_ACTIVE
         )
 
-        response = self.get_request()
+        response = self.send_request()
         response_json = json.loads(response.content)
 
         # Check that it returns the correct order
