@@ -1,13 +1,13 @@
 import json
 
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST, require_GET
+from django.views.decorators.http import require_POST
 
 from orders.models import Order
 import base.helpers as base_helpers
 
 
-@require_GET
+@require_POST
 def uncompleted_order(request):
     # Get the latest uncompleted order
     order = Order.objects.filter(
